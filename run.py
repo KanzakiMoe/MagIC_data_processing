@@ -50,7 +50,7 @@ def plot_linear_regression(x,y1,y2):
 def Nitrite_N(data,parameters):
     Nitrite_N_result = []
     for row in data:
-        nitrogen = (row[1]+parameters[1])/parameters[0]*float(row[0][-3:-1])
+        nitrogen = (row[1]+parameters[1])/parameters[0]*float(row[0][-3:-1])/46.005*14.007
         Nitrite_N_result.append(nitrogen)
     NO3N = np.array(Nitrite_N_result).reshape((len(Nitrite_N_result), 1))
     return NO3N
@@ -59,7 +59,7 @@ def Nitrite_N(data,parameters):
 def Nitrate_N(data,parameters):
     Nitrate_N_result = []
     for row in data:
-        nitrogen = (row[1]+parameters[3])/parameters[2]*float(row[0][-3:-1])
+        nitrogen = (row[1]+parameters[3])/parameters[2]*float(row[0][-3:-1])/62.004*14.007
         Nitrate_N_result.append(nitrogen)
     NO3N = np.array(Nitrate_N_result).reshape((len(Nitrate_N_result), 1))
     return NO3N
@@ -114,6 +114,11 @@ def main():
     output_data.to_excel('./output/output data.xlsx', index = False)
     
     # Save the regression line pragh
+    print("All calculations are done, close the graph to finish the program.")
+    plot_title = "[nitrite]:F(x)="+str(parameters[0])[:8]+"x + "+str(parameters[1])[:8]+", "+"[nitrate]:F(x)="+str(parameters[2])[:8]+"x + "+str(parameters[3])[:8]
+    plt.title(plot_title)
+    plt.draw()
     plt.savefig('./output/output LR graph.png')
+    plt.show()
 
 main()
