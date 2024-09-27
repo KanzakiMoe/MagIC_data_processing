@@ -14,9 +14,7 @@ def plot_linear_regression(x,y1,y2):
     plt.rcParams['font.sans-serif']=['Arial']
     plt.scatter(x,y1,marker='o',s=15,c='white',edgecolors='red')
     plt.scatter(x,y2,marker='o',s=15,c='white',edgecolors='blue')
-    font1 = {'family' : 'Arial',
-            'weight' : 'normal',
-            'size'   : 18,}
+    font1 = {'family':'Arial', 'weight':'normal', 'size':18,}
     plt.xlabel('concentration',font1)
     plt.ylabel('area',font1)
     plt.xticks(fontsize=16)
@@ -47,20 +45,36 @@ def plot_linear_regression(x,y1,y2):
     return parameters
 
 # Calculate nitrogen concentration by nitrite
-def Nitrite_N(data,parameters):
+def Nitrite_N(data,parameters,lower_limit,higher_limit):
     Nitrite_N_result = []
     for row in data:
-        nitrogen = (row[1]+parameters[1])/parameters[0]*float(row[0][-3:-1])/46.005*14.007
-        Nitrite_N_result.append(nitrogen)
-    NO3N = np.array(Nitrite_N_result).reshape((len(Nitrite_N_result), 1))
-    return NO3N
+        if row[1] > lower_limit:
+            if row[1] > higher_limit:
+                nitrogen = "overlimit"
+                Nitrite_N_result.append(nitrogen)
+            else:
+                nitrogen = (row[1]+parameters[1])/parameters[0]*float(row[0][-3:-1])/46.005*14.007
+                Nitrite_N_result.append(nitrogen)
+        else:
+            nitrogen = 0
+            Nitrite_N_result.append(nitrogen)
+    NO2N = np.array(Nitrite_N_result).reshape((len(Nitrite_N_result), 1))
+    return NO2N
 
 # Calculate nitrogen concentration by nitrate
-def Nitrate_N(data,parameters):
+def Nitrate_N(data,parameters,lower_limit,higher_limit):
     Nitrate_N_result = []
     for row in data:
-        nitrogen = (row[1]+parameters[3])/parameters[2]*float(row[0][-3:-1])/62.004*14.007
-        Nitrate_N_result.append(nitrogen)
+        if row[2] > lower_limit:
+            if row[2] > higher_limit:
+                nitrogen = "overlimit"
+                Nitrate_N_result.append(nitrogen)
+            else:
+                nitrogen = (row[2]+parameters[3])/parameters[2]*float(row[0][-3:-1])/62.004*14.007
+                Nitrate_N_result.append(nitrogen)
+        else:
+            nitrogen = 0
+            Nitrate_N_result.append(nitrogen)
     NO3N = np.array(Nitrate_N_result).reshape((len(Nitrate_N_result), 1))
     return NO3N
 
@@ -80,9 +94,12 @@ def main():
     nitrate = []
     for row in data_array:
         if row[1][:3]=="STD":
-            standard_line.append(row[1][4:])
+            standard_line.append(float(row[1][4:]))
             nitrite.append(row[7])
             nitrate.append(row[9])
+    standard_line.sort()
+    nitrite.sort()
+    nitrate.sort()
     
     # Extract user's data
     userdata = []
@@ -103,8 +120,8 @@ def main():
     parameters = plot_linear_regression(standard_line,nitrite,nitrate)
     
     # Calculate concentration of all samples
-    NO2_N = np.nan_to_num(Nitrite_N(userdata, parameters))
-    NO3_N = np.nan_to_num(Nitrate_N(userdata, parameters))
+    NO2_N = np.nan_to_num(Nitrite_N(userdata, parameters , nitrite[0] , nitrite[-1]))
+    NO3_N = np.nan_to_num(Nitrate_N(userdata, parameters , nitrate[0] , nitrate[-1]))
     
     # Output excel sheet
     labels = np.array(labels).reshape(len(labels), 1)
