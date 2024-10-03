@@ -1,7 +1,6 @@
 from tkinter.filedialog import askopenfilename
 import pandas as pd
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
@@ -86,17 +85,23 @@ def main():
     print("Please choose the data file with ending of .csv")
     data_path = askopenfilename()
     original_data = pd.read_csv(data_path)
-    data_array = np.array(original_data)
+    data_array = np.nan_to_num(np.array(original_data))
 
     # Extract standard line data from it for linear regression
     standard_line = []
     nitrite = []
     nitrate = []
+    row_counter = -1
     for row in data_array:
-        if row[1][:3]=="STD":
-            standard_line.append(float(row[1][4:]))
-            nitrite.append(row[7])
-            nitrate.append(row[9])
+        row_counter+=1
+        if row[0][:2] == "20":
+            if row[1][:3] == "STD":
+                standard_line.append(float(row[1][4:]))
+                nitrite.append(row[7])
+                nitrate.append(row[9])
+        else:
+            filtered_data_array = np.delete(data_array, row_counter, axis = 0)
+        
     standard_line.sort()
     nitrite.sort()
     nitrate.sort()
@@ -105,7 +110,7 @@ def main():
     userdata = []
     labels = []
     username_length = len(username)
-    for row in data_array:
+    for row in filtered_data_array:
         if row[1][:username_length] == username:
             userdata.append([row[1],row[7],row[9]])
             labels.append(row[1])
