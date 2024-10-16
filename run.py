@@ -2,6 +2,7 @@ import tkinter as tk
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from tkinter.filedialog import askopenfilename
 from sklearn.linear_model import LinearRegression
 
@@ -78,6 +79,12 @@ def Nitrate_N(data,parameters,lower_limit,higher_limit):
 
 def main():
     
+    # Delete remaining data
+    try:
+        os.remove('output data.xlsx')
+        os.remove('output LR graph.png')
+    except:
+        None
     
     '''
     GUI packing start
