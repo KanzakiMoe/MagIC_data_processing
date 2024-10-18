@@ -143,16 +143,21 @@ def calculation(username,data_path):
     standard_line = []
     nitrite = []
     nitrate = []
+    filtered_data_array = data_array
     row_counter = -1
     for row in data_array:
-        row_counter+=1
-        if row[0][:2] == "20":
-            if row[1][:3] == "STD":
-                standard_line.append(float(row[1][4:]))
-                nitrite.append(row[7])
-                nitrate.append(row[9])
+        if isinstance(row[0], float):
+            1
         else:
-            filtered_data_array = np.delete(data_array, row_counter, axis = 0)
+            row_counter+=1
+            if row[0][:2] == "20":
+                if row[1][:3] == "STD":
+                    standard_line.append(float(row[1][4:]))
+                    nitrite.append(row[7])
+                    nitrate.append(row[9])
+            else:
+                row_counter-=1
+                filtered_data_array = np.delete(filtered_data_array, row_counter, axis = 0)
         
     standard_line.sort()
     nitrite.sort()
@@ -163,9 +168,12 @@ def calculation(username,data_path):
     labels = []
     username_length = len(username)
     for row in filtered_data_array:
-        if row[1][:username_length] == username:
-            userdata.append([row[1],row[7],row[9]])
-            labels.append(row[1])
+        if isinstance(row[1], float):
+            1
+        else:
+            if row[1][:username_length] == username:
+                userdata.append([row[1],row[7],row[9]])
+                labels.append(row[1])
             
     # Detect standard line data and transform into proper format
     try:
