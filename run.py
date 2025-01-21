@@ -74,9 +74,10 @@ def plot_result_curves(output_data):
     # Filter data to only include MA, MB, OA, OB
     filtered_data = output_data[output_data['Sample'].isin(['MA', 'MB', 'OA', 'OB'])].copy()
     
-    # Convert 'Nitrite-N' and 'Nitrate-N' columns to numeric values
-    filtered_data.loc[:, 'Nitrite-N'] = pd.to_numeric(filtered_data['Nitrite-N'], errors='coerce')
-    filtered_data.loc[:, 'Nitrate-N'] = pd.to_numeric(filtered_data['Nitrate-N'], errors='coerce')
+    # Convert columns to numeric values and fill NaN with 0 for other anions
+    anions = ['Fluoride', 'Chloride', 'Sulfate', 'Phosphate']
+    for anion in anions:
+        filtered_data[f'{anion}-Concentration'] = pd.to_numeric(filtered_data[f'{anion}-Concentration'], errors='coerce').fillna(0)
     
     # Sort by Time in ascending order
     filtered_data = filtered_data.sort_values(by='Time', ascending=True)
@@ -84,52 +85,48 @@ def plot_result_curves(output_data):
     # Define colors for each sample
     colors = {'MA': 'red', 'OA': 'blue', 'MB': 'green', 'OB': 'orange'}
     
-    # Plot Nitrite-N
-    plt.figure(figsize=(10, 6))
-    for sample, color in colors.items():
-        sample_data = filtered_data[filtered_data['Sample'] == sample]
-        if not sample_data.empty:
-            plt.plot(sample_data['Time'], sample_data['Nitrite-N'], label=f'{sample} Nitrite-N', color=color, linestyle='-')
-    
-    plt.xlabel('Time', fontsize=14)
-    plt.ylabel('Nitrite-N Concentration', fontsize=14)
-    plt.title('Nitrite-N Concentration Over Time', fontsize=16)
-    plt.legend()
-    plt.grid(True)
-    
-    # Set y-axis to integer values with step 10
-    max_value = int(filtered_data['Nitrite-N'].max()) + 10
-    plt.yticks(np.arange(0, max_value, step=10))
-    
-    plt.savefig('output_Nitrite-N_curves.png')
-    plt.show()
-    
-    # Plot Nitrate-N
-    plt.figure(figsize=(10, 6))
-    for sample, color in colors.items():
-        sample_data = filtered_data[filtered_data['Sample'] == sample]
-        if not sample_data.empty:
-            plt.plot(sample_data['Time'], sample_data['Nitrate-N'], label=f'{sample} Nitrate-N', color=color, linestyle='--')
-    
-    plt.xlabel('Time', fontsize=14)
-    plt.ylabel('Nitrate-N Concentration', fontsize=14)
-    plt.title('Nitrate-N Concentration Over Time', fontsize=16)
-    plt.legend()
-    plt.grid(True)
-    
-    # Set y-axis to integer values with step 10
-    max_value = int(filtered_data['Nitrate-N'].max()) + 10
-    plt.yticks(np.arange(0, max_value, step=10))
-    
-    plt.savefig('output_Nitrate-N_curves.png')
-    plt.show()
+    # Plot concentration for each anion
+    for anion in anions:
+        plt.figure(figsize=(10, 6))
+        for sample, color in colors.items():
+            sample_data = filtered_data[filtered_data['Sample'] == sample]
+            if not sample_data.empty:
+                plt.plot(sample_data['Time'], sample_data[f'{anion}-Concentration'], label=f'{sample} {anion}', color=color, linestyle='-')
+        
+        plt.xlabel('Time', fontsize=14)
+        plt.ylabel(f'{anion} Concentration', fontsize=14)
+        plt.title(f'{anion} Concentration Over Time', fontsize=16)
+        plt.legend()
+        plt.grid(True)
+        
+        # Set y-axis to integer values with adaptive scaling
+        concentration_values = filtered_data[f'{anion}-Concentration']
+        max_value = int(np.nanmax(concentration_values)) + 1  # Add 1 to avoid cutting off the top value
+        min_value = int(np.nanmin(concentration_values))
+        
+        # Calculate step size based on the range of values
+        value_range = max_value - min_value
+        if value_range <= 10:
+            step = 1  # Small range, use step 1
+        elif value_range <= 20:
+            step = 2  # Medium range, use step 2
+        else:
+            step = max(1, value_range // 10)  # Large range, use adaptive step
+        
+        plt.yticks(np.arange(min_value, max_value + 1, step))
+        
+        plt.savefig(f'output_{anion}_concentration_curves.png')
+        plt.show()
 
 def main():
     # Delete remaining data
     try:
         os.remove('output data.xlsx')
         os.remove('output LR graph.png')
-        os.remove('output_result_curves.png')
+        os.remove('output_Fluoride_concentration_curves.png')
+        os.remove('output_Chloride_concentration_curves.png')
+        os.remove('output_Sulfate_concentration_curves.png')
+        os.remove('output_Phosphate_concentration_curves.png')
     except:
         pass
 
@@ -178,89 +175,87 @@ def calculation(username, data_path):
     data_array = np.nan_to_num(np.array(original_data))
 
     # Extract standard line data
-    standard_line = []
-    nitrite = []
-    nitrate = []
-    filtered_data_array = data_array
-    row_counter = -1
-    for row in data_array:
-        if isinstance(row[0], float):
-            pass
-        else:
-            row_counter += 1
-            if row[0][:2] == "20":
-                if row[1][:3] == "STD":
-                    standard_line.append(float(row[1][4:]))
-                    nitrite.append(row[7])
-                    nitrate.append(row[9])
-            else:
-                row_counter -= 1
-                filtered_data_array = np.delete(filtered_data_array, row_counter, axis=0)
+    std_data = original_data[original_data['Ident'].str.startswith('STD')].copy()
+    
+    # Convert standard data to numeric values
+    std_data.loc[:, 'Anions.Fluoride.Area'] = pd.to_numeric(std_data['Anions.Fluoride.Area'], errors='coerce')
+    std_data.loc[:, 'Anions.Chloride.Area'] = pd.to_numeric(std_data['Anions.Chloride.Area'], errors='coerce')
+    std_data.loc[:, 'Anions.Sulfate.Area'] = pd.to_numeric(std_data['Anions.Sulfate.Area'], errors='coerce')
+    std_data.loc[:, 'Anions.Phosphate.Area'] = pd.to_numeric(std_data['Anions.Phosphate.Area'], errors='coerce')
 
-    standard_line.sort()
-    nitrite.sort()
-    nitrate.sort()
+    # Manually set standard concentrations (assuming STD 1 = 1, STD 2 = 2, etc.)
+    std_data['Concentration'] = std_data['Ident'].str.extract(r'STD (\d+)').astype(float)
+
+    # Perform linear regression for each anion
+    anions = ['Fluoride', 'Chloride', 'Sulfate', 'Phosphate']
+    regression_parameters = {}
+
+    for anion in anions:
+        area_col = f'Anions.{anion}.Area'
+        
+        # Filter out rows with NaN values
+        valid_data = std_data[[area_col, 'Concentration']].dropna()
+        
+        if len(valid_data) > 1:
+            X = valid_data[area_col].values.reshape(-1, 1)
+            y = valid_data['Concentration'].values
+            
+            model = LinearRegression()
+            model.fit(X, y)
+            regression_parameters[anion] = {
+                'slope': model.coef_[0],
+                'intercept': model.intercept_
+            }
+        else:
+            regression_parameters[anion] = None
 
     # Extract user's data
     userdata = []
     labels = []
     username_length = len(username)
-    for row in filtered_data_array:
+    for row in data_array:
         if isinstance(row[1], float):
             pass
         else:
             if row[1][:username_length] == username:
-                userdata.append([row[1], row[7], row[9]])
+                userdata.append([row[1], row[7], row[9], row[3], row[5], row[11], row[13]])  # Add other anions data
                 labels.append(row[1])
 
-    # Detect standard line data
-    try:
-        standard_line = [float(stdnum) for stdnum in standard_line]
-    except:
-        print("No standard line data detected, please check the naming format of input file")
-
-    # Calculate linear regression result
-    parameters = plot_linear_regression(standard_line, nitrite, nitrate)
-
-    # Calculate concentration of all samples
-    NO2_N = np.nan_to_num(Nitrite_N(userdata, parameters, nitrite[0], nitrite[-1]))
-    NO3_N = np.nan_to_num(Nitrate_N(userdata, parameters, nitrate[0], nitrate[-1]))
-
-    # Extract time and sample name from labels
-    times = []
-    samples = []
-    for label in labels:
-        parts = label.split('-')
-        times.append(parts[1])
-        samples.append(parts[2])
-
-    # Combine all data into a DataFrame
-    Nitrogen_result = np.hstack((np.array(labels).reshape(len(labels), 1),
-                                 np.array(times).reshape(len(times), 1),
-                                 np.array(samples).reshape(len(samples), 1),
-                                 NO2_N, NO3_N))
+    # Calculate concentration for all samples
+    results = []
+    for label, data in zip(labels, userdata):
+        time = label.split('-')[1]
+        sample = label.split('-')[2]
+        result_row = [label, time, sample]
+        
+        for anion in anions:
+            area_col = f'Anions.{anion}.Area'
+            area_value = data[anions.index(anion) + 3]  # Adjust index based on userdata structure
+            
+            if regression_parameters[anion] is not None and area_value != '':
+                slope = regression_parameters[anion]['slope']
+                intercept = regression_parameters[anion]['intercept']
+                concentration = slope * float(area_value) + intercept
+                result_row.append(concentration)
+            else:
+                result_row.append(np.nan)
+        
+        results.append(result_row)
 
     # Create DataFrame
-    output_data = pd.DataFrame(Nitrogen_result, columns=['Label', 'Time', 'Sample', 'Nitrite-N', 'Nitrate-N'])
+    output_data = pd.DataFrame(results, columns=['Label', 'Time', 'Sample'] + [f'{anion}-Concentration' for anion in anions])
 
-    # Sort by time in reverse order
-    output_data = output_data.sort_values(by='Time', ascending=False)
+    # Sort by time in ascending order
+    output_data = output_data.sort_values(by='Time', ascending=True)
 
     # Define the desired order for samples
     sample_order = ['MA', 'OA', 'MB', 'OB']
     output_data['Sample'] = pd.Categorical(output_data['Sample'], categories=sample_order, ordered=True)
-    output_data = output_data.sort_values(by=['Sample', 'Time'], ascending=[True, False])
+    output_data = output_data.sort_values(by=['Sample', 'Time'], ascending=[True, True])
 
     # Save to Excel
     with pd.ExcelWriter('output data.xlsx') as writer:
         output_data.to_excel(writer, sheet_name='All Samples', index=False)
-
-    # Save the regression line graph
-    plot_title = "[nitrite]:F(x)=" + str(parameters[0])[:8] + "x + " + str(parameters[1])[:8] + ", " + "[nitrate]:F(x)=" + str(parameters[2])[:8] + "x + " + str(parameters[3])[:8]
-    plt.title(plot_title)
-    plt.draw()
-    plt.savefig('output LR graph.png')
-    plt.show()
 
     # Plot the result curves
     plot_result_curves(output_data)
