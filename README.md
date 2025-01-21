@@ -1,15 +1,16 @@
 # MagIC_data_processing
 For YuLab IC data processing
-Support Anammox data analyze now
+Support Anammox data analyze 
+Also available for other anions now
 
-Further direction:
-Support different kinds of data analysis and needs
 
 Bug report:
 Please use "Issues" function, I will check it.
 
 # How to use it?
-Download and install newest version of Python
-Open the "Install_necessary_units_NeedAdmin.bat" file by administrator
-Open "run.py", follow the instructions
-Check the output folder
+UPDATE: 
+Run "run.bat" and wait until the GUI comes out, it might take half a minute based on your computer hardware
+Enter your id on the data
+Choose your data file
+Click start calculation, the result will automatically generate and save at the same folder
+Close all the windows to finish the program
