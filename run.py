@@ -9,6 +9,7 @@ from sklearn.linear_model import LinearRegression
 
 # Draw linear regression function
 def plot_linear_regression(x, y1, y2):
+    print("debug:plot_linear_regression start")
     plt.rcParams['figure.figsize'] = (6, 5)
     plt.rcParams['savefig.dpi'] = 200
     plt.rcParams['figure.dpi'] = 200
@@ -41,10 +42,12 @@ def plot_linear_regression(x, y1, y2):
     plt.tick_params(axis='both', width=1, length=5)
     plt.draw()
     parameters = [lineModel1.coef_[0][0], lineModel1.intercept_[0], lineModel2.coef_[0][0], lineModel2.intercept_[0]]
+    print("debug:plot_linear_regression end")
     return parameters
 
 # Calculate nitrogen concentration by nitrite
 def Nitrite_N(data, parameters, lower_limit, higher_limit):
+    print("debug:Nitrite_N start")
     Nitrite_N_result = []
     for row in data:
         if row[1] > lower_limit:
@@ -54,10 +57,12 @@ def Nitrite_N(data, parameters, lower_limit, higher_limit):
             nitrogen = 0
             Nitrite_N_result.append(nitrogen)
     NO2N = np.array(Nitrite_N_result).reshape((len(Nitrite_N_result), 1))
+    print("debug:Nitrite_N end")
     return NO2N
 
 # Calculate nitrogen concentration by nitrate
 def Nitrate_N(data, parameters, lower_limit, higher_limit):
+    print("debug:Nitrate_N start")
     Nitrate_N_result = []
     for row in data:
         if row[2] > lower_limit:
@@ -67,10 +72,12 @@ def Nitrate_N(data, parameters, lower_limit, higher_limit):
             nitrogen = 0
             Nitrate_N_result.append(nitrogen)
     NO3N = np.array(Nitrate_N_result).reshape((len(Nitrate_N_result), 1))
+    print("debug:Nitrate_N end")
     return NO3N
 
 # Plot the result curves for MA, OA, MB, OB
 def plot_result_curves(output_data):
+    print("debug:plot_result_curves start")
     # Filter data to only include MA, MB, OA, OB
     filtered_data = output_data[output_data['Sample'].isin(['MA', 'MB', 'OA', 'OB'])].copy()
     
@@ -98,11 +105,15 @@ def plot_result_curves(output_data):
     plt.grid(True)
     
     # Set y-axis to integer values with step 10
-    max_value = int(filtered_data['Nitrite-N'].max()) + 10
-    plt.yticks(np.arange(0, max_value, step=10))
-    
-    plt.savefig('output_Nitrite-N_curves.png')
-    plt.show()
+    nitrite_max = filtered_data['Nitrite-N'].max()
+    if pd.isna(nitrite_max):
+        plt.close()
+        print('Warning: No valid Nitrite-N data to plot.')
+    else:
+        max_value = int(nitrite_max) + 10
+        plt.yticks(np.arange(0, max_value, step=10))
+        plt.savefig('output_Nitrite-N_curves.png')
+        plt.show()
     
     # Plot Nitrate-N
     plt.figure(figsize=(10, 6))
@@ -110,19 +121,22 @@ def plot_result_curves(output_data):
         sample_data = filtered_data[filtered_data['Sample'] == sample]
         if not sample_data.empty:
             plt.plot(sample_data['Time'], sample_data['Nitrate-N'], label=f'{sample} Nitrate-N', color=color, linestyle='--')
-    
     plt.xlabel('Time', fontsize=14)
     plt.ylabel('Nitrate-N Concentration', fontsize=14)
     plt.title('Nitrate-N Concentration Over Time', fontsize=16)
     plt.legend()
     plt.grid(True)
-    
     # Set y-axis to integer values with step 10
-    max_value = int(filtered_data['Nitrate-N'].max()) + 10
-    plt.yticks(np.arange(0, max_value, step=10))
-    
-    plt.savefig('output_Nitrate-N_curves.png')
-    plt.show()
+    nitrate_max = filtered_data['Nitrate-N'].max()
+    if pd.isna(nitrate_max):
+        plt.close()
+        print('Warning: No valid Nitrate-N data to plot.')
+    else:
+        max_value = int(nitrate_max) + 10
+        plt.yticks(np.arange(0, max_value, step=10))
+        plt.savefig('output_Nitrate-N_curves.png')
+        plt.show()
+    print("debug:plot_result_curves end")
 
 def main():
     # Delete remaining data
@@ -164,18 +178,23 @@ def main():
 
         def calculation_and_finish(username, data_path):
             calculation(username, data_path)
-            ttk.Label(root, text="All calculations are done, close the window to finish the program.").grid(row=3, column=0, sticky="w")
+            ttk.Label(root, text="All calculations are done, close the window to finish the program in 3 seconds").grid(row=3, column=0, sticky="w")
+            root.after(1000, root.destroy)
 
         ttk.Button(root, text="Press to start calculation", command=lambda: calculation_and_finish(username, data_path)).grid(row=2, column=0, sticky="ew")
 
     ttk.Button(data_frame, text="Please choose your data file", command=lambda: openfile(username)).grid(row=0, column=0, sticky="w")
 
     root.mainloop()
+    
+    os._exit(0)
 
 def calculation(username, data_path):
+    print("debug:calculation start")
     # Read data from data path
     original_data = pd.read_csv(data_path)
-    data_array = np.nan_to_num(np.array(original_data))
+    filled_original_data = original_data.fillna(0)
+    data_array = np.nan_to_num(np.array(filled_original_data))
 
     # Extract standard line data
     standard_line = []
@@ -250,7 +269,10 @@ def calculation(username, data_path):
     sample_order = ['MA', 'OA', 'MB', 'OB']
     output_data['Sample'] = pd.Categorical(output_data['Sample'], categories=sample_order, ordered=True)
     output_data = output_data.sort_values(by=['Sample', 'Time'], ascending=[True, False])
-
+    
+    # Debug print
+    print(output_data)
+    
     # Save to Excel
     with pd.ExcelWriter('output data.xlsx') as writer:
         output_data.to_excel(writer, sheet_name='All Samples', index=False)
@@ -264,5 +286,7 @@ def calculation(username, data_path):
 
     # Plot the result curves
     plot_result_curves(output_data)
+    print("debug:calculation end")
+    return
 
 main()
