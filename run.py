@@ -225,7 +225,6 @@ def main():
         root.grid_columnconfigure(i, weight=1)
 
     root.mainloop()
-    os._exit(0)
 
 def calculation(username, data_path):
     print("debug:calculation start")

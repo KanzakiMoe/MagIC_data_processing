@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['run.py'],
-             pathex=['O:\\Code\\MagIC_data_processing'],
+             pathex=['o:\\Code\\MagIC_data_processing'],
              binaries=[],
              datas=[],
              hiddenimports=[],
