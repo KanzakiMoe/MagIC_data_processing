@@ -6,3 +6,5 @@ output_Chloride_concentration_curves.png
 output_Fluoride_concentration_curves.png
 output_Phosphate_concentration_curves.png
 output_Sulfate_concentration_curves.png
+/build
+/dist

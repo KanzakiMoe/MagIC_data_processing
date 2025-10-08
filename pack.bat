@@ -1,7 +1,7 @@
 
 @echo off
 setlocal
-set EXE_NAME=MagIC_data_processing.exe
+set EXE_NAME=run.exe
 set DIST_DIR=dist
 set ZIP_NAME=release.zip
 
