@@ -1,1 +1,2 @@
-pyinstaller --onefile --windowed run.py
+pyinstaller --onefile --noconsole run.py
+
